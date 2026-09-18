@@ -1,0 +1,31 @@
+name: DOU Job Watcher
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  check-jobs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run DOU watcher
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python watcher.py
+
+      - name: Save seen vacancies
+        run: |
+          git config user.name "dou-job-watcher"
+          git config user.email "actions@github.com"
+          git add seen_jobs.json
+          git diff --cached --quiet || git commit -m "Update seen vacancies"
+          git push
